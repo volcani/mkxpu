@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.11)
+qcmake_minimum_required(VERSION 2.8.11)
 Project(mkxp)
 
 ## Setup options ##
@@ -6,7 +6,7 @@ Project(mkxp)
 option(SHARED_FLUID "Dynamically link fluidsynth at build time" OFF)
 option(WORKDIR_CURRENT "Keep current directory on startup" OFF)
 option(FORCE32 "Force 32bit compile on 64bit OS" OFF)
-set(BINDING "MRUBY" CACHE STRING "The Binding Type (MRI, MRUBY, NULL)")
+set(BINDING "MRI" CACHE STRING "The Binding Type (MRI, MRUBY, NULL)")
 set(EXTERNAL_LIB_PATH "" CACHE PATH "External precompiled lib prefix")
 
 ## Misc setup ##
