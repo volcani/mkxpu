@@ -13,7 +13,17 @@ jobs:
 
     steps:
     - name: Install build deps
-      run: sudo apt-get install mm-common libtool rake ruby libruby imagemagick
+      run: sudo apt-get install mm-common libtool rake ruby imagemagick
+
+    - name: Download Ruby headers
+      run: |
+        wget https://cache.ruby-lang.org/pub/ruby/3.2/ruby-3.2.4.tar.gz
+        tar xzf ruby-3.2.4.tar.gz
+
+    - name: Build
+      env:
+        CPLUS_INCLUDE_PATH: ${{ github.workspace }}/ruby-3.2.4/include
+      run: make  # or cmake ..
 
     - uses: actions/checkout@v2
     - name: Build
