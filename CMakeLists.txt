@@ -1,4 +1,4 @@
-qcmake_minimum_required(VERSION 2.8.11)
+qcmake_minimum_required(VERSION 3.31)
 Project(mkxp)
 
 ## Setup options ##
