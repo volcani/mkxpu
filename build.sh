@@ -124,9 +124,13 @@ then
 
     make clean
     
-    echo "=== Starting mruby build ==="
-    MRUBY_CONFIG="$(pwd)/build_config.rb" make 2>&1 | head -100
+MRUBY_CONFIG="$(pwd)/build_config.rb" make 2>&1 | tee /tmp/mruby.log
+echo "=== WASM related lines ==="
+grep -i "wasm\|emcc\|em++\|emar\|cross\|error\|Error" /tmp/mruby.log
 
+GIT   https://github.com/mattn/mruby-onig-regexp.git  ← build_config.rbにないgemが入っている
+PKG-CONFIG onigmo                                      ← 見つからない
+PKG-CONFIG oniguruma                                   ← 見つからない
     echo "=== Build directory after make ==="
     find build/ -name "*.a" 2>/dev/null || echo "No .a files found"
 
