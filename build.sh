@@ -1,18 +1,6 @@
 #!/bin/bash
-
-# Install OS deps
-# sudo apt install mm-common libtool rake ruby
-
-# Fail immediately
 set -e
 
-# Set optimization level
-#export CFLAGS="-O3 -g0"
-#export CXXFLAGS="-O3 -g0"
-#export CPPFLAGS="-O3 -g0"
-#export LDFLAGS="-O3 -g0"
-
-# Make deps folder
 mkdir -p deps
 cd deps
 
@@ -51,7 +39,6 @@ fi
 # Get emscripten
 if [ ! -d "emsdk" ]
 then
-    echo "Downloading emscripten"
     git clone https://github.com/emscripten-core/emsdk.git
     cd emsdk
     git pull
@@ -60,13 +47,10 @@ then
     cd ..
 fi
 
-# ✅ Activate emscripten（最初に、全ビルドより前に）
+# Activate emscripten
 export EMSDK="$(pwd)/emsdk"
 export PATH="$EMSDK/upstream/emscripten:$EMSDK/node/$(ls $EMSDK/node | head -1)/bin:$PATH"
 export EM_CONFIG="$EMSDK/.emscripten"
-
-# Activate emscripten
-#source emsdk/emsdk_env.sh
 
 # Build libsigc++
 if [ ! -f "libsigc++/sigc++/.libs/libsigc-2.0.a" ]
@@ -101,11 +85,11 @@ then
 fi
 
 # Build oniguruma for Emscripten
-if [ ! -f "oniguruma/lib/libonig.a" ]
+if [ ! -f "oniguruma/install/lib/libonig.a" ]  # ✅ 修正
 then
     wget https://github.com/kkos/oniguruma/releases/download/v6.9.9/onig-6.9.9.tar.gz -O onig.tar.gz
     tar xf onig.tar.gz && rm onig.tar.gz
-    mv onig* oniguruma
+    mv onig-6.9.9 oniguruma
     cd oniguruma
     emconfigure ./configure --enable-static --disable-shared --prefix="$(pwd)/install"
     emmake make -j4
@@ -113,86 +97,46 @@ then
     cd ..
 fi
 
-# Build mruby
-#if [ ! -f "mruby/build/wasm32-unknown-gnu/lib/libmruby.a" ]
-# Build mruby
-# Build mruby
+export ONIG_PREFIX="$(pwd)/oniguruma/install"  # ✅ 追加
+
 # Build mruby
 if [ ! -f "mruby/build/wasm32-unknown-gnu/lib/libmruby.a" ]
 then
     cd mruby
     cp ../../extra/build_config.rb ./build_config.rb
-    cp ../../extra/vm.c.patch ./
-
-    # ここで確認
-    echo "=== build_config.rb exists? ==="
-    ls -la build_config.rb
-
-    echo "=== build_config.rb contents ==="
-    cat build_config.rb
-
-    echo "=== emcc in PATH? ==="
-    which emcc || echo "NOT FOUND"
-    emcc --version || echo "emcc failed"
-
     make clean
-    
-MRUBY_CONFIG="$(pwd)/build_config.rb" make 2>&1 | tee /tmp/mruby.log
-echo "=== WASM related lines ==="
-grep -i "wasm\|emcc\|em++\|emar\|cross\|error\|Error" /tmp/mruby.log
+    MRUBY_CONFIG="$(pwd)/build_config.rb" make 2>&1
     ls build/wasm32-unknown-gnu/lib/libmruby.a || (echo "ERROR: libmruby.a not generated"; exit 1)
     cd ..
 fi
-    #cd mruby
-    #cp ../../extra/build_config.rb ../../extra/vm.c.patch ./
-    #patch -p0 --forward < vm.c.patch
-    #make clean
-    #make
-    #cd ..
-fi
 
-# Done building deps
 echo "Finished building dependencies"
 cd ..
 
-# Build mkxp
 emcmake cmake . -DBINDING=MRUBY -DFORCE32=OFF
 emmake make -j4
 
-# Done building
 echo "Finished building MKXP"
 
-# Copy to build directory
 mkdir -p build
 cp -R mkxp.html mkxp.wasm mkxp.js extra/*.webmanifest extra/js build/
 
-# ==========================
-# GAME_PROCESSING
-# ==========================
 cd build
 
 if [ ! -d "gameasync" ]
 then
-    # Get sample game
     wget https://github.com/pulsejet/knight-blade-web-async/archive/gh-pages.zip -O game.zip
     unzip game.zip "knight-blade-web-async-gh-pages/gameasync/*"
     mv knight-blade-web-async-gh-pages/gameasync .
     rm -rf knight-blade-web-async-gh-pages
     rm -f game.zip
 
-    # Begin processing
     cd gameasync
-
-    # Copy standard rgss1 if custom not present
     if [ ! -f "rgss.rb" ]
     then
         cp ../../extra/rgss.rb .
     fi
-
-    # Make mappings
     ../../extra/make_mapping.sh
-
-    # Preload data
     rm -rf preload ../preload
     cp ../../extra/dump* .
     for f in Data/*
@@ -202,15 +146,11 @@ then
     done
     rm dump*
     mv preload ..
-
-    # Game processing done
     cd ..
 fi
 
-# Make deployable
 mv mkxp.html index.html
 touch .nojekyll
 
-# Done
 echo "Finished everything"
 cd ..
