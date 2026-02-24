@@ -14,11 +14,9 @@ MRuby::CrossBuild.new('wasm32-unknown-gnu') do |conf|
     conf.gem :core => 'mruby-kernel-ext'
     conf.gem :core => 'mruby-print'
     conf.gem :core => 'mruby-compiler'
-
-    # mruby-io, mruby-time, mruby-struct は一旦外す
-    # conf.gem :core => 'mruby-io'
-    # conf.gem :core => 'mruby-time'
-    # conf.gem :core => 'mruby-struct'
+     conf.gem :core => 'mruby-io'
+     conf.gem :core => 'mruby-time'
+     conf.gem :core => 'mruby-struct'
 
     conf.gem :github => 'pulsejet/mruby-marshal'
     conf.gem :github => 'monochromegane/mruby-time-strftime'
