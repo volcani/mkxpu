@@ -13,12 +13,7 @@ jobs:
 
     steps:
     - name: Install build deps
-      run: sudo apt-get install mm-common libtool rake ruby imagemagick
-
-    - uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: '2.2' # または使用するバージョン
-        bundler-cache: true # bundle installを自動化
+      run: sudo apt-get install mm-common libtool rake ruby ruby-dev imagemagick
 
     - uses: actions/checkout@v2
     - name: Build
