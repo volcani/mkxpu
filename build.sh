@@ -97,7 +97,7 @@ then
     cd ..
 fi
 
-export ONIG_PREFIX="$(pwd)/oniguruma/install"  # ✅ 追加
+export ONIG_PREFIX="$(pwd)/oniguruma/install"
 
 # Build mruby
 if [ ! -f "mruby/build/wasm32-unknown-gnu/lib/libmruby.a" ]
