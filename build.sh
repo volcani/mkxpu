@@ -61,7 +61,7 @@ then
 fi
 
 # Activate emscripten
-source emsdk/emsdk_env.sh
+#source emsdk/emsdk_env.sh
 
 # Build libsigc++
 if [ ! -f "libsigc++/sigc++/.libs/libsigc-2.0.a" ]
@@ -94,6 +94,11 @@ then
     emmake make -j4 physfs-static
     cd ..
 fi
+
+source emsdk/emsdk_env.sh
+
+# ここでemccが通るか確認
+which emcc
 
 # Build mruby
 #if [ ! -f "mruby/build/wasm32-unknown-gnu/lib/libmruby.a" ]
