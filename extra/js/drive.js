@@ -34,19 +34,22 @@ window.loadFileAsync = function(fullPath, bitmap, callback) {
     const filename = mappingValue.substring(mappingValue.lastIndexOf("/") + 1).split("?")[0];
 
     // Main loading function
-    const load = (cb1) => {
-        getLazyAsset(iurl, filename, (data) => {
-            FS.createPreloadedFile(path, filename, new Uint8Array(data), true, true, function() {
-                window.fileAsyncCache[mappingKey] = 1;
-                if (!bitmap && window.setNotBusy) window.setNotBusy();
-                if (window.fileLoadedAsync) window.fileLoadedAsync(fullPath);
-                callback();
-                if (cb1) cb1();
-            }, console.error, false, false, () => {
-                try { FS.unlink(path + "/" + filename); } catch (err) {}
-            });
+const load = (cb1) => {
+    getLazyAsset(iurl, filename, (data) => {
+        // ✅ 既存ファイルを先に削除
+        try { FS.unlink(path + "/" + filename); } catch(e) {}
+        
+        FS.createPreloadedFile(path, filename, new Uint8Array(data), true, true, function() {
+            window.fileAsyncCache[mappingKey] = 1;
+            if (!bitmap && window.setNotBusy) window.setNotBusy();
+            if (window.fileLoadedAsync) window.fileLoadedAsync(fullPath);
+            callback();
+            if (cb1) cb1();
+        }, console.error, false, false, () => {
+            try { FS.unlink(path + "/" + filename); } catch (err) {}
         });
-    }
+    });
+}
 
     // Show progress if doing it synchronously only
     if (bitmap && bitmapSizeMapping[mappingKey]) {
@@ -62,6 +65,7 @@ window.loadFileAsync = function(fullPath, bitmap, callback) {
             ctx.drawImage(img, 0, 0, sm[0], sm[1]);
 
             // Create dummy from data uri
+            try { FS.unlink(path + "/" + filename); } catch(e) {}
             FS.createPreloadedFile(path, filename, generationCanvas.toDataURL(), true, true, function() {
                 // Return control to C++
                 callback(); callback = () => {};
