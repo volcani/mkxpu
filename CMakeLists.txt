@@ -379,12 +379,12 @@ if(APPLE)
 endif()
 
 link_directories(
-	deps/libsigc++/sigc++/.libs
-	deps/pixman/pixman/.libs
-	deps/physfs
-	deps/mruby/build/wasm32-unknown-gnu/lib
-
-	${SDL2_LIBRARY_DIRS}
+    deps/libsigc++/sigc++/.libs
+    deps/pixman/pixman/.libs
+    deps/physfs
+    deps/mruby/build/wasm32-unknown-gnu/lib
+    deps/oniguruma/install/lib    # ← 追加
+    ${SDL2_LIBRARY_DIRS}
 )
 
 add_executable(${PROJECT_NAME} MACOSX_BUNDLE
@@ -405,6 +405,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 	deps/pixman/pixman
 	deps/physfs/src
 	deps/mruby/include
+	deps/oniguruma/install/include    # ← 追加
 
 	${SDL2_INCLUDE_DIRS}
 	${FLUID_INCLUDE_DIRS}
@@ -412,7 +413,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 )
 
 target_link_libraries(${PROJECT_NAME}
-	sigc-2.0.a physfs.a pixman-1.a mruby.a
+	sigc-2.0.a physfs.a pixman-1.a mruby.a onig.a    # ← onig.a追加
 
 	${SDL2_LIBRARIES}
 	${SDL2_IMAGE_LIBRARIES}
