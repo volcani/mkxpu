@@ -98,13 +98,11 @@ then
     emmake make clean
     emmake make -j4 physfs-static
     cd ..
-    cd deps/mruby
-MRUBY_CONFIG="$(pwd)/build_config.rb" rake 2>&1 | head -50
-# "emcc" が出てくるか、それとも "gcc" だけか確認
 fi
 
 # Build mruby
 #if [ ! -f "mruby/build/wasm32-unknown-gnu/lib/libmruby.a" ]
+# Build mruby
 # Build mruby
 # Build mruby
 if [ ! -f "mruby/build/wasm32-unknown-gnu/lib/libmruby.a" ]
@@ -113,9 +111,25 @@ then
     cp ../../extra/build_config.rb ./build_config.rb
     cp ../../extra/vm.c.patch ./
 
+    # ここで確認
+    echo "=== build_config.rb exists? ==="
+    ls -la build_config.rb
+
+    echo "=== build_config.rb contents ==="
+    cat build_config.rb
+
+    echo "=== emcc in PATH? ==="
+    which emcc || echo "NOT FOUND"
+    emcc --version || echo "emcc failed"
+
     make clean
-    MRUBY_CONFIG="$(pwd)/build_config.rb" make 2>&1
     
+    echo "=== Starting mruby build ==="
+    MRUBY_CONFIG="$(pwd)/build_config.rb" make 2>&1 | head -100
+
+    echo "=== Build directory after make ==="
+    find build/ -name "*.a" 2>/dev/null || echo "No .a files found"
+
     ls build/wasm32-unknown-gnu/lib/libmruby.a || (echo "ERROR: libmruby.a not generated"; exit 1)
     cd ..
 fi
