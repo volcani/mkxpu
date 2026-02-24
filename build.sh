@@ -40,6 +40,22 @@ then
     mv physfs* physfs
 fi
 
+# Build oniguruma for Emscripten
+if [ ! -f "oniguruma/lib/libonig.a" ]
+then
+    wget https://github.com/kkos/oniguruma/releases/download/v6.9.9/onig-6.9.9.tar.gz -O onig.tar.gz
+    tar xf onig.tar.gz && rm onig.tar.gz
+    mv onig* oniguruma
+    cd oniguruma
+    emconfigure ./configure --enable-static --disable-shared --prefix="$(pwd)/install"
+    emmake make -j4
+    emmake make install
+    cd ..
+fi
+
+# mrubyビルド時にonigurumaのパスを渡す
+ONIG_DIR="$(pwd)/oniguruma/install"
+
 # Get mruby
 if [ ! -d "mruby" ]
 then
