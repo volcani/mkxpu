@@ -95,10 +95,9 @@ then
     cd ..
 fi
 
-source emsdk/emsdk_env.sh
-
-# ここでemccが通るか確認
-which emcc
+export EMSDK="$(pwd)/emsdk"
+export PATH="$EMSDK/upstream/emscripten:$EMSDK/node/$(ls $EMSDK/node)/bin:$PATH"
+export EM_CONFIG="$EMSDK/.emscripten"
 
 # Build mruby
 #if [ ! -f "mruby/build/wasm32-unknown-gnu/lib/libmruby.a" ]
