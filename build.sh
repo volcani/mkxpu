@@ -99,11 +99,17 @@ fi
 if [ ! -f "mruby/build/wasm32-unknown-gnu/lib/libmruby.a" ]
 then
     cd mruby
-    cp ../../extra/build_config.rb ../../extra/vm.c.patch ./
-    #patch -p0 --forward < vm.c.patch
     make clean
-    make
+    make 2>&1 | tee /tmp/mruby-build.log
+    echo "Exit code: $?"
+    ls -la build/wasm32-unknown-gnu/lib/ || echo "Directory does not exist"
     cd ..
+    #cd mruby
+    #cp ../../extra/build_config.rb ../../extra/vm.c.patch ./
+    #patch -p0 --forward < vm.c.patch
+    #make clean
+    #make
+    #cd ..
 fi
 
 # Done building deps
