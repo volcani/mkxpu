@@ -60,6 +60,11 @@ then
     cd ..
 fi
 
+# ✅ Activate emscripten（最初に、全ビルドより前に）
+export EMSDK="$(pwd)/emsdk"
+export PATH="$EMSDK/upstream/emscripten:$EMSDK/node/$(ls $EMSDK/node | head -1)/bin:$PATH"
+export EM_CONFIG="$EMSDK/.emscripten"
+
 # Activate emscripten
 #source emsdk/emsdk_env.sh
 
@@ -95,10 +100,6 @@ then
     cd ..
 fi
 
-export EMSDK="$(pwd)/emsdk"
-export PATH="$EMSDK/upstream/emscripten:$EMSDK/node/$(ls $EMSDK/node)/bin:$PATH"
-export EM_CONFIG="$EMSDK/.emscripten"
-
 # Build mruby
 #if [ ! -f "mruby/build/wasm32-unknown-gnu/lib/libmruby.a" ]
 # Build mruby
@@ -130,7 +131,7 @@ echo "Finished building dependencies"
 cd ..
 
 # Build mkxp
-emcmake cmake emcmake cmake . -DBINDING=MRUBY -DFORCE32=OFF
+emcmake cmake . -DBINDING=MRUBY -DFORCE32=OFF
 emmake make -j4
 
 # Done building
