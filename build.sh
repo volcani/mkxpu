@@ -96,13 +96,22 @@ then
 fi
 
 # Build mruby
+#if [ ! -f "mruby/build/wasm32-unknown-gnu/lib/libmruby.a" ]
+# Build mruby
 if [ ! -f "mruby/build/wasm32-unknown-gnu/lib/libmruby.a" ]
 then
     cd mruby
+    cp ../../extra/build_config.rb ../../extra/vm.c.patch ./
+
+    # emccが使えることを事前確認
+    which emcc || (echo "ERROR: emcc not in PATH"; exit 1)
+    emcc --version
+
     make clean
-    make 2>&1 | tee /tmp/mruby-build.log
-    echo "Exit code: $?"
-    ls -la build/wasm32-unknown-gnu/lib/ || echo "Directory does not exist"
+    make 2>&1
+    
+    # 生成確認
+    ls build/wasm32-unknown-gnu/lib/libmruby.a || (echo "ERROR: wasm build failed"; exit 1)
     cd ..
     #cd mruby
     #cp ../../extra/build_config.rb ../../extra/vm.c.patch ./
