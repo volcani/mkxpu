@@ -1,7 +1,11 @@
+MRuby::Build.new do |conf|
+    toolchain :gcc
+    conf.gembox 'default'
+end
+
 MRuby::CrossBuild.new('wasm32-unknown-gnu') do |conf|
     toolchain :clang
 
-    # 最小構成でまず通るか確認
     conf.gem :core => 'mruby-eval'
     conf.gem :core => 'mruby-string-ext'
     conf.gem :core => 'mruby-numeric-ext'
@@ -14,17 +18,19 @@ MRuby::CrossBuild.new('wasm32-unknown-gnu') do |conf|
     conf.gem :core => 'mruby-kernel-ext'
     conf.gem :core => 'mruby-print'
     conf.gem :core => 'mruby-compiler'
-     conf.gem :core => 'mruby-io'
-     conf.gem :core => 'mruby-time'
-     conf.gem :core => 'mruby-struct'
-
+    conf.gem :core => 'mruby-io'
+    conf.gem :core => 'mruby-time'
+    conf.gem :core => 'mruby-struct'
     conf.gem :github => 'pulsejet/mruby-marshal'
     conf.gem :github => 'monochromegane/mruby-time-strftime'
 
+    onig_prefix = ENV['ONIG_PREFIX'] || ''
+
     conf.cc.command = 'emcc'
-    conf.cc.flags = %W(-g0)
+    conf.cc.flags = ['-g0', "-I#{onig_prefix}/include"]
     conf.cxx.command = 'em++'
-    conf.cxx.flags = %W(-g0 -std=c++14)
+    conf.cxx.flags = ['-g0', '-std=c++14', "-I#{onig_prefix}/include"]
     conf.linker.command = 'emcc'
+    conf.linker.flags << "-L#{onig_prefix}/lib"
     conf.archiver.command = 'emar'
 end
