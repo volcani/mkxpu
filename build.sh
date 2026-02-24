@@ -111,7 +111,7 @@ echo "Finished building dependencies"
 cd ..
 
 # Build mkxp
-emcmake cmake .
+emcmake cmake emcmake cmake . -DBINDING=MRUBY -DFORCE32=OFF
 emmake make -j4
 
 # Done building
