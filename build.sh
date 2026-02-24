@@ -127,13 +127,6 @@ then
 MRUBY_CONFIG="$(pwd)/build_config.rb" make 2>&1 | tee /tmp/mruby.log
 echo "=== WASM related lines ==="
 grep -i "wasm\|emcc\|em++\|emar\|cross\|error\|Error" /tmp/mruby.log
-
-GIT   https://github.com/mattn/mruby-onig-regexp.git  ← build_config.rbにないgemが入っている
-PKG-CONFIG onigmo                                      ← 見つからない
-PKG-CONFIG oniguruma                                   ← 見つからない
-    echo "=== Build directory after make ==="
-    find build/ -name "*.a" 2>/dev/null || echo "No .a files found"
-
     ls build/wasm32-unknown-gnu/lib/libmruby.a || (echo "ERROR: libmruby.a not generated"; exit 1)
     cd ..
 fi
