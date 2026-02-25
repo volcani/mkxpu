@@ -142,6 +142,13 @@
     </style>
   </head>
   <body>
+    <div id="start-overlay" style="
+    position:fixed;top:0;left:0;width:100%;height:100%;
+    background:rgba(0,0,0,0.85);color:white;
+    font-size:28px;display:flex;align-items:center;
+    justify-content:center;cursor:pointer;z-index:999;">
+    ▶ クリックしてスタート
+</div>
     <div id="main">
         <div style="overflow:visible;" id="spinner">
             <div class="spinner"></div>
@@ -176,7 +183,17 @@
         </g>
         </svg>
     </div>
-
+<script type='text/javascript'>
+    // AudioContext をユーザージェスチャーで再開
+    function resumeAudio() {
+        if (Module && Module.SDL2 && Module.SDL2.audioContext) {
+            Module.SDL2.audioContext.resume();
+        }
+    }
+    document.addEventListener('click', resumeAudio);
+    document.addEventListener('keydown', resumeAudio);
+    document.addEventListener('touchstart', resumeAudio);
+</script>
     <script type='text/javascript'>
         var namespace = 'kne_b';
         var wTitle = 'KN_E'
@@ -232,19 +249,28 @@
         }
 
         // Load wasm then initialize
-        setTimeout(() => {
-            getLazyAsset('mkxp.wasm', 'Game engine', () => {
-                const s = document.createElement('script');
-                s.setAttribute('src', 'mkxp.js');
-                document.body.appendChild(s);
+        // ✅ クリック後にゲームをロード開始
+document.getElementById('start-overlay').addEventListener('click', function() {
+    this.style.display = 'none';
 
-                getLazyAsset('gameasync/bitmap-map.js', 'Primary assets', () => {
-                    const s = document.createElement('script');
-                    s.setAttribute('src', 'gameasync/bitmap-map.js');
-                    document.body.appendChild(s);
-                });
-            });
-        }, 200);
+    // AudioContext再開
+    resumeAudio();
+
+    // ゲームロード開始（元のsetTimeoutの中身）
+    getLazyAsset('mkxp.wasm', 'Game engine', () => {
+        const s = document.createElement('script');
+        s.setAttribute('src', 'mkxp.js');
+        document.body.appendChild(s);
+
+        getLazyAsset('gameasync/bitmap-map.js', 'Primary assets', () => {
+            const s = document.createElement('script');
+            s.setAttribute('src', 'gameasync/bitmap-map.js');
+            document.body.appendChild(s);
+        });
+    });
+}, { once: true });
+
+// ✅ 元のsetTimeoutは削除
         var bitmapSizeMapping = {};
 
         if (!is_touch_device()) {
