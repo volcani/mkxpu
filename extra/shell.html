@@ -186,9 +186,11 @@
 <script type='text/javascript'>
     // AudioContext をユーザージェスチャーで再開
     function resumeAudio() {
-        if (Module && Module.SDL2 && Module.SDL2.audioContext) {
-            Module.SDL2.audioContext.resume();
-        }
+        try {
+            if (Module && Module.SDL2 && Module.SDL2.audioContext) {
+                Module.SDL2.audioContext.resume();
+            }
+        } catch(e) {}
     }
     document.addEventListener('click', resumeAudio);
     document.addEventListener('keydown', resumeAudio);
