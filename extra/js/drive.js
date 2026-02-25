@@ -219,9 +219,8 @@ window.fileLoadedAsync = function(file) {
 
 var activeStreams = [];
 function getLazyAsset(url, filename, callback, noretry) {
-    const xhr = new XMLHttpRequest();
-    xhr.responseType = "arraybuffer";
     const pdiv = document.getElementById("progress");
+    let abortController = new AbortController();
     let abortTimer = 0;
 
     const end = (message) => {
@@ -234,8 +233,7 @@ function getLazyAsset(url, filename, callback, noretry) {
     }
 
     const retry = () => {
-        xhr.abort();
-
+        abortController.abort();
         if (noretry) {
             end('skip'); callback(null);
         } else {
@@ -244,27 +242,67 @@ function getLazyAsset(url, filename, callback, noretry) {
         }
     }
 
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState == XMLHttpRequest.DONE && xhr.status >= 200 && xhr.status < 400) {
-            end('done');
-            callback(xhr.response);
-        }
-    }
-    xhr.onprogress = function (event) {
-        const loaded = Math.round(event.loaded / 1024);
-        const total = Math.round(event.total / 1024);
-        pdiv.innerHTML = `${filename} - ${loaded}KB / ${total}KB`;
-
-        clearTimeout(abortTimer);
-        abortTimer = setTimeout(retry, 10000);
-    };
-    xhr.open('GET', url);
-    xhr.send();
-
     pdiv.innerHTML = `${filename} - start`;
     pdiv.style.opacity = '0.5';
-
     activeStreams.push(filename);
-
     abortTimer = setTimeout(retry, 10000);
+
+    fetch(url, {
+        method: 'GET',
+        mode: 'cors',              // クロスオリジン対応
+        credentials: 'omit',       // クッキー不要
+        cache: 'force-cache',      // キャッシュ優先
+        signal: abortController.signal
+    })
+    .then(response => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const contentLength = response.headers.get('content-length');
+        const total = contentLength ? parseInt(contentLength) : 0;
+        let loaded = 0;
+
+        // 進捗表示
+        const reader = response.body.getReader();
+        const chunks = [];
+
+        const read = () => reader.read().then(({ done, value }) => {
+            if (done) {
+                clearTimeout(abortTimer);
+                abortTimer = setTimeout(retry, 10000);
+
+                const buffer = new Uint8Array(chunks.reduce((acc, c) => acc + c.length, 0));
+                let offset = 0;
+                for (const chunk of chunks) {
+                    buffer.set(chunk, offset);
+                    offset += chunk.length;
+                }
+                end('done');
+                callback(buffer.buffer);
+                return;
+            }
+            chunks.push(value);
+            loaded += value.length;
+            const loadedKB = Math.round(loaded / 1024);
+            const totalKB = total ? Math.round(total / 1024) : '?';
+            pdiv.innerHTML = `${filename} - ${loadedKB}KB / ${totalKB}KB`;
+
+            clearTimeout(abortTimer);
+            abortTimer = setTimeout(retry, 10000);
+
+            return read();
+        });
+
+        return read();
+    })
+    .catch(err => {
+        if (err.name === 'AbortError') return;
+        console.error('getLazyAsset error:', err);
+        end('error');
+        if (noretry) {
+            callback(null);
+        } else {
+            activeStreams.splice(activeStreams.indexOf(filename), 1);
+            getLazyAsset(url, filename, callback);
+        }
+    });
 }
