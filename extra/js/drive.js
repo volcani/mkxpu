@@ -1,6 +1,16 @@
-// Canvas used for image generation
+// drive.jsの先頭（window.fileAsyncCache = {}; の直後）に追加
 var generationCanvas = document.createElement('canvas')
 window.fileAsyncCache = {};
+
+// ✅ ここに追加
+const mkdirp = (dirPath) => {
+    const parts = dirPath.split('/').filter(Boolean);
+    let current = '';
+    for (const part of parts) {
+        current += '/' + part;
+        try { FS.mkdir(current); } catch(e) {}
+    }
+};
 
 window.getMappingKey = function(file) {
     return file.toLowerCase().replace(new RegExp("\\.[^/.]+$"), "")
@@ -34,10 +44,9 @@ window.loadFileAsync = function(fullPath, bitmap, callback) {
     const filename = mappingValue.substring(mappingValue.lastIndexOf("/") + 1).split("?")[0];
 
     // Main loading function
-    const load = (cb1) => {
+const load = (cb1) => {
     getLazyAsset(iurl, filename, (data) => {
-        mkdirp(path);  // ← 追加
-        // ✅ 既存ファイルを先に削除
+        mkdirp(path);  // ✅ これで参照できる
         try { FS.unlink(path + "/" + filename); } catch(e) {}
         
         FS.createPreloadedFile(path, filename, new Uint8Array(data), true, true, function() {
