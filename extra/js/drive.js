@@ -13,7 +13,9 @@ const mkdirp = (dirPath) => {
 };
 
 window.getMappingKey = function(file) {
-    return file.toLowerCase().replace(new RegExp("\\.[^/.]+$"), "")
+    return file.toLowerCase()
+               .replace(/^\/game\//, '')   // ← 先頭の/game/を除去
+               .replace(new RegExp("\\.[^/.]+$"), "")
 }
 
 window.loadFileAsync = function(fullPath, bitmap, callback) {
