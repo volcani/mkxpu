@@ -20,6 +20,10 @@ window.getMappingKey = function(file) {
 
 window.loadFileAsync = function(fullPath, bitmap, callback) {
     // noop
+    console.log('loadFileAsync called:', fullPath, 'bitmap:', bitmap);  // ← 追加
+    const key = getMappingKey(fullPath);
+    console.log('  key:', key, 'value:', mapping[key]);  // ← 追加
+    
     callback = callback || (() => {});
 
     // Get mapping key
