@@ -34,8 +34,9 @@ window.loadFileAsync = function(fullPath, bitmap, callback) {
     const filename = mappingValue.substring(mappingValue.lastIndexOf("/") + 1).split("?")[0];
 
     // Main loading function
-const load = (cb1) => {
+    const load = (cb1) => {
     getLazyAsset(iurl, filename, (data) => {
+        mkdirp(path);  // ← 追加
         // ✅ 既存ファイルを先に削除
         try { FS.unlink(path + "/" + filename); } catch(e) {}
         
@@ -64,6 +65,7 @@ const load = (cb1) => {
             const ctx = generationCanvas.getContext('2d');
             ctx.drawImage(img, 0, 0, sm[0], sm[1]);
 
+            mkdirp(path);  // ← 追加
             // Create dummy from data uri
             try { FS.unlink(path + "/" + filename); } catch(e) {}
             FS.createPreloadedFile(path, filename, generationCanvas.toDataURL(), true, true, function() {
