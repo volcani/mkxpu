@@ -15,13 +15,18 @@ RUN apt-get update && apt-get install -y \
     bzip2 \
     && rm -rf /var/lib/apt/lists/*
 
-# depkitをダウンロード・展開
 RUN wget --no-check-certificate -O /tmp/mkxp-depkit.tar.xz \
       "https://www.dropbox.com/s/mtp44ur367m2zts/mkxp-depkit.tar.xz?dl=1" && \
     tar -xf /tmp/mkxp-depkit.tar.xz -C /opt && \
     rm /tmp/mkxp-depkit.tar.xz
 
 RUN /opt/mkxp-depkit/setup_depkit.sh
+
+# python/python3をホスト側バイナリに委譲するラッパーを作成
+# 実際のバイナリはci.ymlでvolumeマウントされる /usr/local/bin/python3-host を呼ぶ
+RUN printf '#!/bin/bash\nexec /usr/local/bin/python3-host "$@"\n' > /usr/local/bin/python && \
+    chmod +x /usr/local/bin/python && \
+    cp /usr/local/bin/python /usr/local/bin/python3
 
 WORKDIR /workspace
 
