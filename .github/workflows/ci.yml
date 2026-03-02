@@ -23,18 +23,21 @@ jobs:
           cd deps/emsdk
           ./emsdk install latest
           ./emsdk activate latest
-
-      # build.shのemsdk関連処理をホスト側で先に実行しておく
-      - name: Pre-run emsdk source on host
-        run: |
-          source deps/emsdk/emsdk_env.sh
-          # emsdkが要求する環境変数をGITHUB_ENVに書き出す
-          echo "EMSDK=$EMSDK" >> $GITHUB_ENV
-          echo "EMSDK_NODE=$EMSDK_NODE" >> $GITHUB_ENV
+          source ./emsdk_env.sh
           echo "EM_CONFIG=$EM_CONFIG" >> $GITHUB_ENV
-          # emscripten/nodeのバイナリパスを特定
-          echo "EMSCRIPTEN_PATH=$EMSDK/upstream/emscripten" >> $GITHUB_ENV
-          echo "EMSCRIPTEN_NODE_PATH=$(dirname $EMSDK_NODE)" >> $GITHUB_ENV
+
+      # ホスト側のpython3バイナリをdeps以下にコピーしてコンテナから使えるようにする
+      - name: Copy python3 for container
+        run: |
+          mkdir -p deps/python3/bin
+          cp $(which python3) deps/python3/bin/python3
+          cp $(which python3) deps/python3/bin/python
+          # 依存する共有ライブラリも収集
+          ldd $(which python3) | grep -o '/[^ ]*' | xargs -I{} cp --parents {} deps/python3/ 2>/dev/null || true
+          # python3の標準ライブラリもコピー
+          PYVER=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+          cp -r /usr/lib/python${PYVER} deps/python3/lib/ 2>/dev/null || true
+          cp -r /usr/lib/python3 deps/python3/lib/ 2>/dev/null || true
 
       - name: Build Docker image (Ubuntu 12.04 + depkit)
         run: |
@@ -45,25 +48,16 @@ jobs:
 
       - name: Build inside Ubuntu 12.04 container
         run: |
-          # build.shのemsdkブロックをスキップするため deps/emsdk を既存扱いにする
-          # （if [ ! -d "emsdk" ] の条件を満たしている → スキップ済み）
-          # source emsdk/emsdk_env.sh の代わりにPATHと環境変数を直接注入する
           docker run --rm \
             -v "${{ github.workspace }}:/workspace" \
             -w /workspace \
             -e EMSDK="/workspace/deps/emsdk" \
-            -e EMSDK_NODE="/workspace/$(realpath --relative-to=${{ github.workspace }} $EMSDK_NODE)" \
+            -e EMSDK_NODE="/workspace/deps/emsdk/node/$(ls deps/emsdk/node)/bin/node" \
             -e EM_CONFIG="$EM_CONFIG" \
-            -e EM_CACHE="/workspace/deps/emsdk/upstream/emscripten/cache" \
-            --env PATH="/workspace/deps/emsdk/upstream/emscripten:$EMSCRIPTEN_NODE_PATH:/opt/depkit/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
+            -e PATH="/workspace/deps/python3/bin:/workspace/deps/emsdk/upstream/emscripten:/workspace/deps/emsdk/node/$(ls deps/emsdk/node)/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
+            -e LD_LIBRARY_PATH="/workspace/deps/python3/lib/x86_64-linux-gnu:/workspace/deps/python3/lib" \
             mkxp-web-build:ubuntu1204 \
-            bash -c "
-              # emsdk_env.shのsourceをスキップするためダミーで上書き
-              mkdir -p deps/emsdk
-              echo 'true' > deps/emsdk/emsdk_env.sh
-              source /opt/mkxp-depkit/buildenv.sh
-              ./build.sh
-            "
+            "./build.sh"
 
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@releases/v3
