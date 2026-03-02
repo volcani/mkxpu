@@ -7,11 +7,8 @@ MRuby::CrossBuild.new('wasm32-unknown-gnu') do |conf|
     toolchain :clang
 
     conf.gembox 'default'
-
-    # mruby-onig-regexpをmruby 2.x互換の古いコミットに固定（canonical:trueで優先）
-    # presym.hが存在しない2.1.2との互換性のため最新版を上書き
-    conf.gem :github => 'mattn/mruby-onig-regexp', :commit => '3c1a8c4', :canonical => true
-
+    # コミット指定なしでmasterを使用（mruby 2.x互換API使用のため）
+    conf.gem :github => 'mattn/mruby-onig-regexp', :canonical => true
     conf.gem :github => 'pulsejet/mruby-marshal'
     conf.gem :github => 'monochromegane/mruby-time-strftime'
     conf.gem :core => 'mruby-eval'
