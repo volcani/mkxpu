@@ -12,38 +12,22 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     zlib1g-dev \
     libffi-dev \
+    bzip2 \
     && rm -rf /var/lib/apt/lists/*
 
-# OpenSSL 1.1をソースからビルド（Python 3のhttps通信に必要）
-RUN wget http://www.openssl.org/source/openssl-1.1.1w.tar.gz && \
-    tar -xf openssl-1.1.1w.tar.gz && \
-    cd openssl-1.1.1w && \
-    ./config --prefix=/usr/local/openssl --openssldir=/usr/local/openssl shared zlib && \
-    make -j$(nproc) && \
-    make install && \
-    echo '/usr/local/openssl/lib' > /etc/ld.so.conf.d/openssl.conf && \
-    ldconfig && \
-    cd .. && rm -rf openssl-1.1.1w openssl-1.1.1w.tar.gz
+# Minicondaでバイナリ配布のPython 3.11を導入（gccバージョン非依存）
+RUN wget --no-check-certificate \
+      https://repo.anaconda.com/miniconda/Miniconda3-py311_23.5.2-0-Linux-x86_64.sh \
+      -O /tmp/miniconda.sh && \
+    bash /tmp/miniconda.sh -b -p /opt/miniconda && \
+    rm /tmp/miniconda.sh
 
-ENV PATH="/usr/local/openssl/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-ENV LD_LIBRARY_PATH="/usr/local/openssl/lib"
+ENV PATH="/opt/miniconda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
-# Python 3.11をソースからビルド（--enable-optimizationsなし）
-RUN wget --no-check-certificate https://www.python.org/ftp/python/3.11.9/Python-3.11.9.tgz && \
-    tar -xf Python-3.11.9.tgz && \
-    cd Python-3.11.9 && \
-    ./configure --with-openssl=/usr/local/openssl && \
-    make -j$(nproc) && \
-    make altinstall && \
-    cd .. && rm -rf Python-3.11.9 Python-3.11.9.tgz
-
-RUN ln -sf /usr/local/bin/python3.11 /usr/local/bin/python3 && \
-    ln -sf /usr/local/bin/python3.11 /usr/local/bin/python
-
-# 証明書設定
-RUN /usr/local/bin/python3.11 -m ensurepip && \
-    /usr/local/bin/python3.11 -m pip install --upgrade pip certifi && \
-    CERT_PATH=$(/usr/local/bin/python3.11 -c "import certifi; print(certifi.where())") && \
+# 証明書をcertifiから取得
+RUN pip install --upgrade pip certifi && \
+    CERT_PATH=$(python -c "import certifi; print(certifi.where())") && \
+    mkdir -p /usr/local/openssl && \
     cp $CERT_PATH /usr/local/openssl/cert.pem
 
 ENV SSL_CERT_FILE="/usr/local/openssl/cert.pem"
