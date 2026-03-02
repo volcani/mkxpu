@@ -31,9 +31,41 @@ jobs:
           ./emsdk install latest
           ./emsdk activate latest
 
+      - name: Download mruby
+        run: |
+          mkdir -p deps && cd deps
+          wget https://github.com/mruby/mruby/archive/2.1.2.tar.gz -O mruby.tar.gz
+          tar xf mruby.tar.gz && rm mruby.tar.gz
+          mv mruby-* mruby
+
+      - name: Patch build_config and trigger gem clone
+        run: |
+          source $HOME/mkxp-depkit/buildenv.sh
+          source deps/emsdk/emsdk_env.sh
+          cd deps/mruby
+          cp ../../extra/build_config.rb ../../extra/vm.c.patch ./
+          patch -p0 --forward < vm.c.patch || true
+          # 一度makeを走らせてgemをcloneさせる（失敗してもOK）
+          make || true
+
+      - name: Patch mruby-onig-regexp mrbgem.rake
+        run: |
+          # cloneされたmruby-onig-regexpのmrbgem.rakeを
+          # mruby 2.1.2互換（presym.h不要）の古いバージョンに差し替える
+          ONIG_DIR=$(find deps/mruby/build/repos -name "mruby-onig-regexp" -type d 2>/dev/null | head -1)
+          if [ -n "$ONIG_DIR" ]; then
+            echo "Patching: $ONIG_DIR"
+            # mruby-onig-regexpをmruby 2.x互換コミットに固定
+            cd "$ONIG_DIR"
+            git checkout 91a302e || true
+            cd -
+          fi
+
       - name: Build
         run: |
           source $HOME/mkxp-depkit/buildenv.sh
+          # mrubyのビルドキャッシュをリセットして再ビルドさせる
+          rm -f deps/mruby/build/wasm32-unknown-gnu/lib/libmruby.a
           ./build.sh
 
       - name: Deploy 🚀
