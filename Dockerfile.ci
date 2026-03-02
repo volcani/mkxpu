@@ -10,6 +10,8 @@ RUN apt-get update && apt-get install -y \
     ruby \
     imagemagick \
     build-essential \
+    gcc-4.8 \
+    g++-4.8 \
     git \
     wget \
     curl \
@@ -18,6 +20,10 @@ RUN apt-get update && apt-get install -y \
     zlib1g-dev \
     libffi-dev \
     && rm -rf /var/lib/apt/lists/*
+
+# gcc 4.8をデフォルトに設定
+RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 50 && \
+    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 50
 
 RUN wget http://www.openssl.org/source/openssl-1.1.1w.tar.gz && \
     tar -xf openssl-1.1.1w.tar.gz && \
@@ -32,12 +38,11 @@ RUN wget http://www.openssl.org/source/openssl-1.1.1w.tar.gz && \
 ENV PATH="/usr/local/openssl/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 ENV LD_LIBRARY_PATH="/usr/local/openssl/lib"
 
-# Python 3.9 → 3.11に変更（match文はPython 3.10+必須のため）
+# --enable-optimizationsを外す（古いgccでのPGOビルド失敗を回避）
 RUN wget https://www.python.org/ftp/python/3.11.9/Python-3.11.9.tgz && \
     tar -xf Python-3.11.9.tgz && \
     cd Python-3.11.9 && \
     ./configure \
-      --enable-optimizations \
       --with-openssl=/usr/local/openssl && \
     make -j$(nproc) && \
     make altinstall && \
