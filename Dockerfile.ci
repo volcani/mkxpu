@@ -1,0 +1,35 @@
+FROM ubuntu:12.04
+
+# Ubuntu 12.04はEOLのためold-releasesミラーに切り替え
+RUN sed -i 's|http://archive.ubuntu.com|http://old-releases.ubuntu.com|g' /etc/apt/sources.list && \
+    sed -i 's|http://security.ubuntu.com|http://old-releases.ubuntu.com|g' /etc/apt/sources.list
+
+RUN apt-get update && apt-get install -y \
+    mm-common \
+    libtool \
+    rake \
+    ruby \
+    imagemagick \
+    build-essential \
+    git \
+    wget \
+    curl \
+    xz-utils \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# mkxp-depkit をダウンロード・展開
+RUN wget -O /tmp/mkxp-depkit.tar.xz \
+      "https://www.dropbox.com/s/mtp44ur367m2zts/mkxp-depkit.tar.xz?dl=1" && \
+    tar -xf /tmp/mkxp-depkit.tar.xz -C /opt && \
+    rm /tmp/mkxp-depkit.tar.xz
+
+# setup_depkit.sh を実行してbuildenv.shを生成
+RUN /opt/mkxp-depkit/setup_depkit.sh
+
+WORKDIR /workspace
+
+# ビルド時にbuildenv.shをsourceしてから各コマンドを実行できるよう
+# ENTRYPOINTでsourceを仕込む
+ENTRYPOINT ["bash", "-c", "source /opt/mkxp-depkit/buildenv.sh && exec \"$@\"", "--"]
+CMD ["bash"]
