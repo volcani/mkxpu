@@ -16,6 +16,13 @@ jobs:
       - name: Install build deps
         run: sudo apt-get install -y mm-common libtool rake ruby imagemagick
 
+      - name: Install depkit
+        run: |
+          wget -O /tmp/mkxp-depkit.tar.xz \
+            "https://www.dropbox.com/s/mtp44ur367m2zts/mkxp-depkit.tar.xz?dl=1"
+          tar -xf /tmp/mkxp-depkit.tar.xz -C $HOME
+          $HOME/mkxp-depkit/setup_depkit.sh
+
       - name: Install emsdk
         run: |
           mkdir -p deps
@@ -24,26 +31,10 @@ jobs:
           ./emsdk install latest
           ./emsdk activate latest
 
-      - name: Build Docker image (Ubuntu 12.04 + depkit)
+      - name: Build
         run: |
-          docker build \
-            -f Dockerfile.ci \
-            -t mkxp-web-build:ubuntu1204 \
-            .
-
-      - name: Build inside Ubuntu 12.04 container
-        run: |
-          NODE_VERSION=$(ls deps/emsdk/node)
-
-          docker run --rm \
-            -v "${{ github.workspace }}:/workspace" \
-            -v "$(which python3):/usr/local/bin/python3-host" \
-            -w /workspace \
-            -e EMSDK="/workspace/deps/emsdk" \
-            -e EMSDK_NODE="/workspace/deps/emsdk/node/${NODE_VERSION}/bin/node" \
-            -e PATH="/workspace/deps/emsdk/upstream/emscripten:/workspace/deps/emsdk/node/${NODE_VERSION}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
-            mkxp-web-build:ubuntu1204 \
-            "./build.sh"
+          source $HOME/mkxp-depkit/buildenv.sh
+          ./build.sh
 
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@releases/v3
