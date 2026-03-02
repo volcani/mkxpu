@@ -13,25 +13,15 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      # depkitのダウンロードを含むため重い→イメージをキャッシュ
-      - name: Cache Docker image
-        uses: actions/cache@v3
-        with:
-          path: /tmp/docker-cache
-          key: ubuntu1204-depkit-${{ hashFiles('Dockerfile.ci') }}
+      - name: Install build deps
+        run: sudo apt-get install -y mm-common libtool rake ruby imagemagick
 
       - name: Build Docker image (Ubuntu 12.04 + depkit)
         run: |
-          if [ -f /tmp/docker-cache/image.tar ]; then
-            docker load < /tmp/docker-cache/image.tar
-          else
-            docker build \
-              -f Dockerfile.ci \
-              -t mkxp-web-build:ubuntu1204 \
-              .
-            mkdir -p /tmp/docker-cache
-            docker save mkxp-web-build:ubuntu1204 > /tmp/docker-cache/image.tar
-          fi
+          docker build \
+            -f Dockerfile.ci \
+            -t mkxp-web-build:ubuntu1204 \
+            .
 
       - name: Build inside Ubuntu 12.04 container
         run: |
