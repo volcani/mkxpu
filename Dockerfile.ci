@@ -16,7 +16,22 @@ RUN apt-get update && apt-get install -y \
     curl \
     xz-utils \
     ca-certificates \
+    libssl-dev \
+    zlib1g-dev \
+    libffi-dev \
     && rm -rf /var/lib/apt/lists/*
+
+# Python 3をソースからビルド（Ubuntu 12.04のaptにはPython3が無いため）
+RUN wget https://www.python.org/ftp/python/3.9.18/Python-3.9.18.tgz && \
+    tar -xf Python-3.9.18.tgz && \
+    cd Python-3.9.18 && \
+    ./configure --enable-optimizations && \
+    make -j$(nproc) && \
+    make altinstall && \
+    cd .. && rm -rf Python-3.9.18 Python-3.9.18.tgz
+
+# python3コマンドとして使えるようにシンボリックリンク
+RUN ln -sf /usr/local/bin/python3.9 /usr/local/bin/python3
 
 # mkxp-depkit をダウンロード・展開
 RUN wget -O /tmp/mkxp-depkit.tar.xz \
@@ -29,7 +44,5 @@ RUN /opt/mkxp-depkit/setup_depkit.sh
 
 WORKDIR /workspace
 
-# ビルド時にbuildenv.shをsourceしてから各コマンドを実行できるよう
-# ENTRYPOINTでsourceを仕込む
 ENTRYPOINT ["bash", "-c", "source /opt/mkxp-depkit/buildenv.sh && exec \"$@\"", "--"]
 CMD ["bash"]
