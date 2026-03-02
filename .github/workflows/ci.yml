@@ -24,20 +24,11 @@ jobs:
           ./emsdk install latest
           ./emsdk activate latest
           source ./emsdk_env.sh
-          echo "EM_CONFIG=$EM_CONFIG" >> $GITHUB_ENV
+          echo "NODE_DIR=$(ls ${{ github.workspace }}/deps/emsdk/node)" >> $GITHUB_ENV
 
-      # ホスト側のpython3バイナリをdeps以下にコピーしてコンテナから使えるようにする
-      - name: Copy python3 for container
+      - name: Patch build.sh to skip emsdk_env.sh sourcing
         run: |
-          mkdir -p deps/python3/bin
-          cp $(which python3) deps/python3/bin/python3
-          cp $(which python3) deps/python3/bin/python
-          # 依存する共有ライブラリも収集
-          ldd $(which python3) | grep -o '/[^ ]*' | xargs -I{} cp --parents {} deps/python3/ 2>/dev/null || true
-          # python3の標準ライブラリもコピー
-          PYVER=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-          cp -r /usr/lib/python${PYVER} deps/python3/lib/ 2>/dev/null || true
-          cp -r /usr/lib/python3 deps/python3/lib/ 2>/dev/null || true
+          sed -i 's|source emsdk/emsdk_env.sh|echo "Skipping emsdk_env.sh (PATH already injected by Docker)"|' build.sh
 
       - name: Build Docker image (Ubuntu 12.04 + depkit)
         run: |
@@ -52,10 +43,9 @@ jobs:
             -v "${{ github.workspace }}:/workspace" \
             -w /workspace \
             -e EMSDK="/workspace/deps/emsdk" \
-            -e EMSDK_NODE="/workspace/deps/emsdk/node/$(ls deps/emsdk/node)/bin/node" \
-            -e EM_CONFIG="$EM_CONFIG" \
-            -e PATH="/workspace/deps/python3/bin:/workspace/deps/emsdk/upstream/emscripten:/workspace/deps/emsdk/node/$(ls deps/emsdk/node)/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
-            -e LD_LIBRARY_PATH="/workspace/deps/python3/lib/x86_64-linux-gnu:/workspace/deps/python3/lib" \
+            -e EMSDK_NODE="/workspace/deps/emsdk/node/${{ env.NODE_DIR }}/bin/node" \
+            -e EM_CONFIG="/workspace/deps/emsdk/.emscripten" \
+            -e PATH="/workspace/deps/emsdk/upstream/emscripten:/workspace/deps/emsdk/node/${{ env.NODE_DIR }}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
             mkxp-web-build:ubuntu1204 \
             "./build.sh"
 
