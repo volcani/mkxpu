@@ -5,7 +5,7 @@ end
 
 MRuby::CrossBuild.new('wasm32-unknown-gnu') do |conf|
     toolchain :clang
-  
+
     conf.gembox 'default'
     conf.gem :github => 'pulsejet/mruby-marshal'
     conf.gem :github => 'monochromegane/mruby-time-strftime'
@@ -14,7 +14,10 @@ MRuby::CrossBuild.new('wasm32-unknown-gnu') do |conf|
     conf.cc.flags = %W(-O3 -g0)
     conf.cxx.command = 'em++'
     conf.cxx.flags = %W(-O3 -g0 -std=c++14)
-  
+
     conf.linker.command = 'emcc'
     conf.archiver.command = 'emar'
+
+    # mruby-onig-regexpをdefault gemboxから除外
+    conf.disable_gem :github => 'mattn/mruby-onig-regexp'
 end
