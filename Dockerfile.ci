@@ -32,24 +32,23 @@ RUN wget http://www.openssl.org/source/openssl-1.1.1w.tar.gz && \
 ENV PATH="/usr/local/openssl/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 ENV LD_LIBRARY_PATH="/usr/local/openssl/lib"
 
-RUN wget https://www.python.org/ftp/python/3.9.18/Python-3.9.18.tgz && \
-    tar -xf Python-3.9.18.tgz && \
-    cd Python-3.9.18 && \
+# Python 3.9 → 3.11に変更（match文はPython 3.10+必須のため）
+RUN wget https://www.python.org/ftp/python/3.11.9/Python-3.11.9.tgz && \
+    tar -xf Python-3.11.9.tgz && \
+    cd Python-3.11.9 && \
     ./configure \
       --enable-optimizations \
       --with-openssl=/usr/local/openssl && \
     make -j$(nproc) && \
     make altinstall && \
-    cd .. && rm -rf Python-3.9.18 Python-3.9.18.tgz
+    cd .. && rm -rf Python-3.11.9 Python-3.11.9.tgz
 
-RUN ln -sf /usr/local/bin/python3.9 /usr/local/bin/python3
+RUN ln -sf /usr/local/bin/python3.11 /usr/local/bin/python3
 
-# 証明書バンドルをcertifiパッケージから取得してOpenSSLに認識させる
-RUN /usr/local/bin/python3.9 -m ensurepip && \
-    /usr/local/bin/python3.9 -m pip install --upgrade pip certifi && \
-    CERT_PATH=$(/usr/local/bin/python3.9 -c "import certifi; print(certifi.where())") && \
-    cp $CERT_PATH /usr/local/openssl/cert.pem && \
-    /usr/local/bin/python3.9 -c "import ssl; print(ssl.get_default_verify_paths())"
+RUN /usr/local/bin/python3.11 -m ensurepip && \
+    /usr/local/bin/python3.11 -m pip install --upgrade pip certifi && \
+    CERT_PATH=$(/usr/local/bin/python3.11 -c "import certifi; print(certifi.where())") && \
+    cp $CERT_PATH /usr/local/openssl/cert.pem
 
 ENV SSL_CERT_FILE="/usr/local/openssl/cert.pem"
 ENV REQUESTS_CA_BUNDLE="/usr/local/openssl/cert.pem"
