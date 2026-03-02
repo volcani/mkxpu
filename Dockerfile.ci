@@ -19,7 +19,6 @@ RUN apt-get update && apt-get install -y \
     libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# OpenSSL 1.1をソースからビルド（12.04付属の0.9.8ではhttpsが通らないため）
 RUN wget http://www.openssl.org/source/openssl-1.1.1w.tar.gz && \
     tar -xf openssl-1.1.1w.tar.gz && \
     cd openssl-1.1.1w && \
@@ -33,7 +32,6 @@ RUN wget http://www.openssl.org/source/openssl-1.1.1w.tar.gz && \
 ENV PATH="/usr/local/openssl/bin:${PATH}"
 ENV LD_LIBRARY_PATH="/usr/local/openssl/lib:${LD_LIBRARY_PATH}"
 
-# Python 3.9をOpenSSL 1.1と紐づけてビルド
 RUN wget https://www.python.org/ftp/python/3.9.18/Python-3.9.18.tgz && \
     tar -xf Python-3.9.18.tgz && \
     cd Python-3.9.18 && \
@@ -46,7 +44,6 @@ RUN wget https://www.python.org/ftp/python/3.9.18/Python-3.9.18.tgz && \
 
 RUN ln -sf /usr/local/bin/python3.9 /usr/local/bin/python3
 
-# mkxp-depkit をダウンロード・展開
 RUN wget --no-check-certificate -O /tmp/mkxp-depkit.tar.xz \
       "https://www.dropbox.com/s/mtp44ur367m2zts/mkxp-depkit.tar.xz?dl=1" && \
     tar -xf /tmp/mkxp-depkit.tar.xz -C /opt && \
@@ -58,21 +55,3 @@ WORKDIR /workspace
 
 ENTRYPOINT ["bash", "-c", "source /opt/mkxp-depkit/buildenv.sh && exec \"$@\"", "--"]
 CMD ["bash"]
-```
-
----
-
-### 問題の構造
-```
-Ubuntu 12.04
-└── OpenSSL 0.9.8 (古すぎてTLS 1.2非対応)
-    └── Python 3.9 がこれにリンクされる
-        └── urllib/https → storage.googleapis.com へ接続失敗
-            └── emsdk のダウンロードが失敗
-```
-```
-対処後
-└── OpenSSL 1.1.1w (ソースビルド、TLS 1.2/1.3対応)
-    └── Python 3.9 が --with-openssl で紐づけ
-        └── urllib/https → 正常に通信可能
-            └── emsdk のダウンロード成功
