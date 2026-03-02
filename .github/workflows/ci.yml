@@ -16,31 +16,18 @@ jobs:
       - name: Install build deps
         run: sudo apt-get install -y mm-common libtool rake ruby imagemagick
 
-      # emsdkはホスト側（Python3あり）でインストール
-      - name: Install emsdk
-        run: |
-          mkdir -p deps
-          git clone https://github.com/emscripten-core/emsdk.git deps/emsdk
-          cd deps/emsdk
-          ./emsdk install latest
-          ./emsdk activate latest
-
-      - name: Build Docker image (Ubuntu 12.04 + depkit)
+      - name: Build Docker image (Ubuntu 12.04 + depkit + python3)
         run: |
           docker build \
             -f Dockerfile.ci \
             -t mkxp-web-build:ubuntu1204 \
             .
 
-      # emsdkをマウントしてコンテナ内でbuild.shを実行
-      # EMSDK_SKIP_INSTALLでbuild.sh内のemsdk再インストールをスキップ
       - name: Build inside Ubuntu 12.04 container
         run: |
           docker run --rm \
             -v "${{ github.workspace }}:/workspace" \
             -w /workspace \
-            -e EMSDK="/workspace/deps/emsdk" \
-            -e EMSDK_SKIP_INSTALL=1 \
             mkxp-web-build:ubuntu1204 \
             "./build.sh"
 
