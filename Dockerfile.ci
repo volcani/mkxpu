@@ -4,14 +4,7 @@ RUN sed -i 's|http://archive.ubuntu.com|http://old-releases.ubuntu.com|g' /etc/a
     sed -i 's|http://security.ubuntu.com|http://old-releases.ubuntu.com|g' /etc/apt/sources.list
 
 RUN apt-get update && apt-get install -y \
-    mm-common \
-    libtool \
-    rake \
-    ruby \
-    imagemagick \
     build-essential \
-    gcc-4.8 \
-    g++-4.8 \
     git \
     wget \
     curl \
@@ -20,10 +13,6 @@ RUN apt-get update && apt-get install -y \
     zlib1g-dev \
     libffi-dev \
     && rm -rf /var/lib/apt/lists/*
-
-# gcc 4.8をデフォルトに設定
-RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 50 && \
-    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 50
 
 RUN wget http://www.openssl.org/source/openssl-1.1.1w.tar.gz && \
     tar -xf openssl-1.1.1w.tar.gz && \
@@ -37,26 +26,6 @@ RUN wget http://www.openssl.org/source/openssl-1.1.1w.tar.gz && \
 
 ENV PATH="/usr/local/openssl/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 ENV LD_LIBRARY_PATH="/usr/local/openssl/lib"
-
-# --enable-optimizationsを外す（古いgccでのPGOビルド失敗を回避）
-RUN wget https://www.python.org/ftp/python/3.11.9/Python-3.11.9.tgz && \
-    tar -xf Python-3.11.9.tgz && \
-    cd Python-3.11.9 && \
-    ./configure \
-      --with-openssl=/usr/local/openssl && \
-    make -j$(nproc) && \
-    make altinstall && \
-    cd .. && rm -rf Python-3.11.9 Python-3.11.9.tgz
-
-RUN ln -sf /usr/local/bin/python3.11 /usr/local/bin/python3
-
-RUN /usr/local/bin/python3.11 -m ensurepip && \
-    /usr/local/bin/python3.11 -m pip install --upgrade pip certifi && \
-    CERT_PATH=$(/usr/local/bin/python3.11 -c "import certifi; print(certifi.where())") && \
-    cp $CERT_PATH /usr/local/openssl/cert.pem
-
-ENV SSL_CERT_FILE="/usr/local/openssl/cert.pem"
-ENV REQUESTS_CA_BUNDLE="/usr/local/openssl/cert.pem"
 
 RUN wget --no-check-certificate -O /tmp/mkxp-depkit.tar.xz \
       "https://www.dropbox.com/s/mtp44ur367m2zts/mkxp-depkit.tar.xz?dl=1" && \
