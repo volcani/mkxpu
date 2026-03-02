@@ -16,7 +16,21 @@ jobs:
       - name: Install build deps
         run: sudo apt-get install -y mm-common libtool rake ruby imagemagick
 
-      - name: Build Docker image (Ubuntu 12.04 + depkit + python3)
+      # emsdkはホスト側（Python3・新しいglibc環境）でインストール
+      - name: Install emsdk
+        run: |
+          mkdir -p deps
+          git clone https://github.com/emscripten-core/emsdk.git deps/emsdk
+          cd deps/emsdk
+          ./emsdk install latest
+          ./emsdk activate latest
+          # ホスト側でsourceしてPATH情報をファイルに保存
+          source ./emsdk_env.sh
+          echo "EMSDK=$EMSDK" >> $GITHUB_ENV
+          echo "EMSDK_NODE=$EMSDK_NODE" >> $GITHUB_ENV
+          echo "EM_CONFIG=$EM_CONFIG" >> $GITHUB_ENV
+
+      - name: Build Docker image (Ubuntu 12.04 + depkit)
         run: |
           docker build \
             -f Dockerfile.ci \
@@ -25,9 +39,19 @@ jobs:
 
       - name: Build inside Ubuntu 12.04 container
         run: |
+          # emsdkのパスをコンテナ内PATHに追加してbuild.shを実行
+          # deps/emsdk はvolumeマウントで /workspace/deps/emsdk として見える
+          # build.sh の if [ ! -d "emsdk" ] により再インストールはスキップされる
+          EMSDK_BIN="${{ github.workspace }}/deps/emsdk/upstream/emscripten"
+          NODE_BIN="${{ github.workspace }}/deps/emsdk/node/$(ls deps/emsdk/node)/bin"
+
           docker run --rm \
             -v "${{ github.workspace }}:/workspace" \
             -w /workspace \
+            -e EMSDK="/workspace/deps/emsdk" \
+            -e EMSDK_NODE="/workspace/deps/emsdk/node/$(ls deps/emsdk/node)/bin/node" \
+            -e EM_CONFIG="$EM_CONFIG" \
+            -e PATH="/workspace/deps/emsdk/upstream/emscripten:/workspace/deps/emsdk/node/$(ls deps/emsdk/node)/bin:/opt/mkxp-depkit/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
             mkxp-web-build:ubuntu1204 \
             "./build.sh"
 
