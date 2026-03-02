@@ -33,7 +33,6 @@ jobs:
 
       - name: Prepare patched build_config.rb
         run: |
-          # mruby-onig-regexpをmruby 2.x互換コミットに固定したbuild_config.rbで上書き
           cat > extra/build_config.rb << 'EOF'
           MRuby::Build.new do |conf|
               toolchain :gcc
@@ -44,10 +43,10 @@ jobs:
               toolchain :clang
 
               conf.gembox 'default'
+              conf.gem :github => 'mattn/mruby-onig-regexp', :commit => '3c1a8c4', :canonical => true
               conf.gem :github => 'pulsejet/mruby-marshal'
               conf.gem :github => 'monochromegane/mruby-time-strftime'
               conf.gem :core => 'mruby-eval'
-              conf.gem :github => 'mattn/mruby-onig-regexp', :commit => '3c1a8c4'
 
               conf.cc.command = 'emcc'
               conf.cc.flags = %W(-O3 -g0)
@@ -58,6 +57,16 @@ jobs:
               conf.archiver.command = 'emar'
           end
           EOF
+
+      - name: Download mruby and add presym.h shim
+        run: |
+          mkdir -p deps && cd deps
+          wget https://github.com/mruby/mruby/archive/2.1.2.tar.gz -O mruby.tar.gz
+          tar xf mruby.tar.gz && rm mruby.tar.gz
+          mv mruby-* mruby
+          # presym.hはmruby 3.xで追加されたヘッダー
+          # mruby-onig-regexpが要求するため空のshimを追加
+          touch mruby/include/mruby/presym.h
 
       - name: Build
         run: |
