@@ -6,6 +6,7 @@ end
 MRuby::CrossBuild.new('wasm32-unknown-gnu') do |conf|
     toolchain :clang
 
+    # gemboxを使わず個別指定（mruby-onig-regexpを完全除外）
     conf.gem :core => 'mruby-io'
     conf.gem :core => 'mruby-math'
     conf.gem :core => 'mruby-time'
